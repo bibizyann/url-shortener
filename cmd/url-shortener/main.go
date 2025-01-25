@@ -4,6 +4,8 @@ import (
 	"RESTAPIporject/internal/config"
 	"RESTAPIporject/internal/lib/logger/sl"
 	"RESTAPIporject/internal/storage/sqlite"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"log/slog"
 	"os"
 )
@@ -11,7 +13,7 @@ import (
 const (
 	envLocal = "local"
 	envDev   = "dev"
-	envProd  = "prod"
+	// envProd  = "prod"
 )
 
 func main() {
@@ -26,21 +28,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	id, err := storage.SaveURL("https://google.com", "google")
+	err = storage.DeleteURL("google")
 	if err != nil {
-		log.Error("failed to save url", sl.Err(err))
+		log.Error("url wasn't found", sl.Err(err))
 		os.Exit(1)
 	}
 
-	log.Info("saved url", slog.Int64("id", id))
+	router := chi.NewRouter()
 
-	id, err = storage.SaveURL("https://google.com", "google")
-	if err != nil {
-		log.Error("failed to save url", sl.Err(err))
-		os.Exit(1)
-	}
-
-	log.Info("saved url", slog.Int64("id", id))
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
+	// router.Use(mwLogger.New(log))
 
 	_ = storage
 
